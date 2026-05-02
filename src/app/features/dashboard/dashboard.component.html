@@ -1,0 +1,199 @@
+<div class="flex h-screen bg-gray-100 overflow-hidden">
+
+  <app-sidebar />
+
+  <!-- ── Main ── -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Top header -->
+    <header class="bg-white border-b border-gray-200 px-6 h-14 flex items-center justify-between flex-shrink-0">
+      <nav class="flex items-center gap-2 text-sm">
+        <span class="text-gray-400">Home</span>
+        <span class="text-gray-300">/</span>
+        <span class="text-gray-800 font-medium">Dashboard</span>
+      </nav>
+      <div class="flex items-center gap-4">
+        <button class="relative p-1.5 text-gray-500 hover:text-gray-700 focus:outline-none">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          <span class="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+        <div class="flex items-center gap-2.5">
+          <div class="text-right hidden sm:block">
+            <p class="text-sm font-semibold text-gray-800 leading-tight">Admin User</p>
+            <p class="text-xs text-gray-400">Super Admin</p>
+          </div>
+          <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm">A</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable content -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- Page title -->
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Overview</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Welcome back, here's what's happening at AmarBazaar today.</p>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      @if (isLoading()) {
+        <div class="flex items-center justify-center py-16">
+          <div class="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="ml-3 text-gray-500 text-sm">Loading dashboard data…</span>
+        </div>
+      }
+
+      <!-- Error state -->
+      @if (errorMessage()) {
+        <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Dashboard content (shown when data is loaded) -->
+      @if (homeData(); as data) {
+
+        <!-- Banners -->
+        @if (data.banners.length > 0) {
+          <section>
+            <h2 class="text-base font-bold text-gray-900 mb-3">Banners</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              @for (banner of data.banners; track banner.id) {
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                  @if (banner.imageUrl) {
+                    <img [src]="banner.imageUrl" [alt]="banner.promotionTitle" class="w-full h-32 object-cover">
+                  }
+                  <div class="p-4">
+                    <p class="text-sm font-semibold text-gray-800">{{ banner.promotionTitle }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ banner.promotionDetails }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ banner.fromDate }} – {{ banner.toDate }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Categories -->
+        @if (data.categories.length > 0) {
+          <section>
+            <h2 class="text-base font-bold text-gray-900 mb-3">Categories</h2>
+            <div class="flex flex-wrap gap-2">
+              @for (cat of data.categories; track cat.id) {
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+                  [class.bg-emerald-100]="cat.isActive"
+                  [class.text-emerald-700]="cat.isActive"
+                  [class.bg-gray-100]="!cat.isActive"
+                  [class.text-gray-500]="!cat.isActive">
+                  {{ cat.name }}
+                </span>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Popular Items -->
+        @if (data.popularItems.length > 0) {
+          <section>
+            <h2 class="text-base font-bold text-gray-900 mb-3">Popular Items</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+              @for (item of data.popularItems; track item.id) {
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                  @if (item.imageUrl) {
+                    <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-28 object-cover">
+                  }
+                  <div class="p-3">
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ item.name }}</p>
+                    <p class="text-xs text-emerald-600 font-medium mt-0.5">৳ {{ item.price }}</p>
+                    <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full"
+                      [class.bg-emerald-100]="item.stockStatus === 'IN_STOCK'"
+                      [class.text-emerald-700]="item.stockStatus === 'IN_STOCK'"
+                      [class.bg-yellow-100]="item.stockStatus === 'LOW_STOCK'"
+                      [class.text-yellow-700]="item.stockStatus === 'LOW_STOCK'"
+                      [class.bg-red-100]="item.stockStatus === 'OUT_OF_STOCK'"
+                      [class.text-red-700]="item.stockStatus === 'OUT_OF_STOCK'">
+                      {{ item.stockStatus }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Featured Items -->
+        @if (data.featuredItems.length > 0) {
+          <section>
+            <h2 class="text-base font-bold text-gray-900 mb-3">Featured Items</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+              @for (item of data.featuredItems; track item.id) {
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                  @if (item.imageUrl) {
+                    <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-28 object-cover">
+                  }
+                  <div class="p-3">
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ item.name }}</p>
+                    <p class="text-xs text-emerald-600 font-medium mt-0.5">৳ {{ item.price }}</p>
+                    @if (item.discountPrice) {
+                      <p class="text-xs text-gray-400 line-through">৳ {{ item.discountPrice }}</p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+      }
+
+      <!-- Order Trends chart (static, always visible) -->
+      <div class="bg-white rounded-xl p-5 shadow-sm">
+        <div class="flex items-start justify-between mb-1">
+          <div>
+            <h2 class="text-base font-bold text-gray-900">Order Trends</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Daily revenue over the last 7 days</p>
+          </div>
+          <div class="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-medium">
+            <button (click)="setTab('Weekly')" class="px-3 py-1.5 transition-colors"
+              [class.bg-gray-100]="activeTab() === 'Weekly'"
+              [class.text-gray-800]="activeTab() === 'Weekly'"
+              [class.bg-white]="activeTab() !== 'Weekly'"
+              [class.text-gray-500]="activeTab() !== 'Weekly'">Weekly</button>
+            <button (click)="setTab('Monthly')" class="px-3 py-1.5 transition-colors border-l border-gray-200"
+              [class.bg-gray-100]="activeTab() === 'Monthly'"
+              [class.text-gray-800]="activeTab() === 'Monthly'"
+              [class.bg-white]="activeTab() !== 'Monthly'"
+              [class.text-gray-500]="activeTab() !== 'Monthly'">Monthly</button>
+          </div>
+        </div>
+        <div class="mt-4">
+          <svg viewBox="0 0 560 180" class="w-full" preserveAspectRatio="none" style="height:200px">
+            <defs>
+              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#10b981" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#10b981" stop-opacity="0.02"/>
+              </linearGradient>
+            </defs>
+            @for (y of [40, 80, 120, 160]; track y) {
+              <line [attr.x1]="30" [attr.y1]="y" [attr.x2]="540" [attr.y2]="y" stroke="#f0f0f0" stroke-width="1"/>
+            }
+            <polygon [attr.points]="chartArea" fill="url(#chartGrad)"/>
+            <polyline [attr.points]="chartPoints" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            @for (pt of [{x:40,y:120},{x:120,y:70},{x:200,y:95},{x:280,y:80},{x:360,y:30},{x:440,y:60},{x:520,y:90}]; track pt.x) {
+              <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="4" fill="white" stroke="#10b981" stroke-width="2"/>
+            }
+            @for (day of [{x:40,l:'Mon'},{x:120,l:'Tue'},{x:200,l:'Wed'},{x:280,l:'Thu'},{x:360,l:'Fri'},{x:440,l:'Sat'},{x:520,l:'Sun'}]; track day.l) {
+              <text [attr.x]="day.x" y="175" text-anchor="middle" fill="#9ca3af" font-size="11">{{ day.l }}</text>
+            }
+          </svg>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
