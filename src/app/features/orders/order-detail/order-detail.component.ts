@@ -30,15 +30,14 @@ export class OrderDetailComponent implements OnInit {
   updateSuccess = signal(false);
 
   ngOnInit(): void {
-    // Order passed via router state from the list
-    const nav = this.router.getCurrentNavigation();
-    const stateOrder = nav?.extras?.state?.['order'] as OrderResponse | undefined;
+    // Order passed via router state — read from history.state which persists after navigation
+    const stateOrder = history.state?.order as OrderResponse | undefined;
 
     if (stateOrder) {
       this.order.set(stateOrder);
       this.selectedStatus.set(stateOrder.orderStatus as OrderStatus);
     } else {
-      // Fallback: navigated directly — go back to list
+      // Fallback: navigated directly (e.g. page refresh) — go back to list
       this.router.navigate(['/orders']);
     }
   }
@@ -102,6 +101,12 @@ export class OrderDetailComponent implements OnInit {
     const o = this.order();
     if (!o) return 0;
     return o.orderItems.reduce((sum, item) => sum + item.priceAtOrder * item.quantity, 0);
+  }
+
+  grandTotal(): number {
+    const o = this.order();
+    if (!o) return 0;
+    return this.subtotal() + Number(o.deliveryCharge ?? 0);
   }
 
   statusChanged(): boolean {

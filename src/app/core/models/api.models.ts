@@ -97,6 +97,8 @@ export interface OrderItem {
   id: string;
   orderId: string;
   productId: string | null;
+  productName: string | null;
+  imageUrl: string | null;
   quantity: number;
   priceAtOrder: number;
   variantId: number | null;
