@@ -9,53 +9,56 @@
         <h1 class="text-xl font-bold text-gray-900">Inventory</h1>
         <p class="text-xs text-gray-400">Manage stock levels across all products</p>
       </div>
-      <div class="flex items-center gap-3">
-        <button class="relative p-1.5 text-gray-500 hover:text-gray-700">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-          </svg>
-          <span class="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
-      </div>
     </header>
 
     <main class="flex-1 overflow-y-auto p-6">
 
-      <!-- Alert banner when there are stock issues -->
-      @if (!isLoading() && (criticalLow() > 0 || outOfStock() > 0)) {
-        <div class="mb-6 bg-white rounded-xl border border-gray-200 p-5">
-          <div class="flex items-start justify-between mb-4">
+      <!-- 3 Summary cards -->
+      @if (summary()) {
+        <div class="grid grid-cols-3 gap-4 mb-6">
+
+          <!-- Critical Low -->
+          <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between">
             <div>
-              <h2 class="text-lg font-bold text-gray-900">Attention Required</h2>
-              <p class="text-sm text-gray-500 mt-0.5">
-                {{ criticalLow() + outOfStock() }} items need stock attention. Review and update to avoid stockouts.
-              </p>
+              <p class="text-xs text-gray-400">Critical Low</p>
+              <p class="text-3xl font-extrabold text-gray-900 mt-1">{{ summary()!.criticalLow }}</p>
+              <p class="text-xs text-gray-400 mt-1">items below threshold</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              </svg>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-4 max-w-md">
-            <div class="bg-orange-50 rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <p class="text-xs text-gray-500">Low Stock</p>
-                <p class="text-2xl font-extrabold text-gray-900">{{ criticalLow() }}</p>
-              </div>
-              <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <svg class="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                </svg>
-              </div>
+
+          <!-- Out of Stock -->
+          <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between">
+            <div>
+              <p class="text-xs text-gray-400">Out of Stock</p>
+              <p class="text-3xl font-extrabold text-gray-900 mt-1">{{ summary()!.outOfStock }}</p>
+              <p class="text-xs text-gray-400 mt-1">products unavailable</p>
             </div>
-            <div class="bg-red-50 rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <p class="text-xs text-gray-500">Out of Stock</p>
-                <p class="text-2xl font-extrabold text-gray-900">{{ outOfStock() }}</p>
-              </div>
-              <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                </svg>
-              </div>
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
             </div>
           </div>
+
+          <!-- Re-order Pending -->
+          <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between">
+            <div>
+              <p class="text-xs text-gray-400">Re-order Pending</p>
+              <p class="text-3xl font-extrabold text-gray-900 mt-1">{{ summary()!.reorderPending }}</p>
+              <p class="text-xs text-gray-400 mt-1">need restocking</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+            </div>
+          </div>
+
         </div>
       }
 
@@ -78,7 +81,7 @@
               type="text"
               [ngModel]="searchQuery()"
               (ngModelChange)="searchQuery.set($event)"
-              placeholder="Search by product name..."
+              placeholder="Search by product name or SKU..."
               class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 placeholder-gray-400"
             />
           </div>
@@ -95,25 +98,26 @@
           </div>
         } @else {
 
-          <!-- Table -->
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-gray-100 bg-gray-50">
                 <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-12">Image</th>
                 <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Product</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">SKU</th>
                 <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Stock Level</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Threshold</th>
                 <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                 <th class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-              @for (product of filtered(); track product.id) {
-                <tr class="hover:bg-gray-50 transition-colors" [class.bg-orange-50]="activeProductId() === product.id">
+              @for (product of filtered(); track product.productId) {
+                <tr class="hover:bg-gray-50 transition-colors" [class.bg-orange-50]="activeProductId() === product.productId">
                   <!-- Image -->
                   <td class="px-5 py-3.5">
                     <div class="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
                       @if (product.imageUrl) {
-                        <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-cover"/>
+                        <img [src]="product.imageUrl" [alt]="product.productName" class="w-full h-full object-cover"/>
                       } @else {
                         <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -121,18 +125,22 @@
                       }
                     </div>
                   </td>
-                  <!-- Product info -->
+                  <!-- Product name -->
                   <td class="px-5 py-3.5">
-                    <p class="font-semibold text-gray-800 leading-tight">{{ product.name }}</p>
-                    <p class="text-xs text-gray-400 mt-0.5">ID: {{ product.id }}</p>
+                    <p class="font-semibold text-gray-800 leading-tight">{{ product.productName }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">ID: {{ product.productId }}</p>
                   </td>
-                  <!-- Stock level -->
+                  <!-- SKU -->
+                  <td class="px-5 py-3.5">
+                    <span class="font-mono text-xs text-gray-500">{{ product.sku || '—' }}</span>
+                  </td>
+                  <!-- Stock level with unit -->
                   <td class="px-5 py-3.5">
                     <div class="flex items-center gap-1.5">
                       <span class="text-base font-bold" [class]="stockQtyClass(product.stockStatus)">
                         {{ product.stockQuantity }}
                       </span>
-                      <span class="text-xs text-gray-400">units</span>
+                      <span class="text-xs text-gray-400">{{ product.unit }}</span>
                       @if (product.stockStatus === 'LOW_STOCK') {
                         <svg class="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
@@ -145,6 +153,14 @@
                       }
                     </div>
                   </td>
+                  <!-- Threshold -->
+                  <td class="px-5 py-3.5">
+                    @if (product.lowStockThreshold != null) {
+                      <span class="text-sm text-gray-600">{{ product.lowStockThreshold }} {{ product.unit }}</span>
+                    } @else {
+                      <span class="text-gray-300 text-sm">—</span>
+                    }
+                  </td>
                   <!-- Status badge -->
                   <td class="px-5 py-3.5">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold" [class]="stockBadgeClass(product.stockStatus)">
@@ -153,7 +169,7 @@
                   </td>
                   <!-- Action -->
                   <td class="px-5 py-3.5">
-                    @if (activeProductId() !== product.id) {
+                    @if (activeProductId() !== product.productId) {
                       <button
                         (click)="openUpdatePanel(product)"
                         class="px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
@@ -170,16 +186,15 @@
                 </tr>
 
                 <!-- Inline update panel -->
-                @if (activeProductId() === product.id) {
+                @if (activeProductId() === product.productId) {
                   <tr>
-                    <td colspan="5" class="px-5 py-4 bg-blue-50 border-b border-blue-100">
+                    <td colspan="7" class="px-5 py-4 bg-blue-50 border-b border-blue-100">
                       <div class="max-w-lg">
                         <p class="text-sm font-semibold text-gray-800 mb-3">
-                          Update stock for <span class="text-blue-600">{{ product.name }}</span>
+                          Update stock for <span class="text-blue-600">{{ product.productName }}</span>
                         </p>
 
                         <div class="flex items-end gap-3">
-                          <!-- Operation selector -->
                           <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Operation</label>
                             <select
@@ -193,19 +208,43 @@
                             </select>
                           </div>
 
-                          <!-- Quantity input -->
                           <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
-                            <input
-                              type="number"
-                              [ngModel]="quantity()"
-                              (ngModelChange)="quantity.set(+$event)"
-                              min="0"
-                              class="w-28 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-300"
-                            />
+                            <div class="flex items-center gap-1">
+                              <input
+                                type="number"
+                                [ngModel]="quantity()"
+                                (ngModelChange)="quantity.set(+$event)"
+                                min="0"
+                                class="w-24 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-300"
+                              />
+                              <select
+                                [ngModel]="selectedUnit()"
+                                (ngModelChange)="selectedUnit.set($event)"
+                                class="px-2 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                              >
+                                @for (u of unitOptions; track u) {
+                                  <option [value]="u">{{ u }}</option>
+                                }
+                              </select>
+                            </div>
                           </div>
 
-                          <!-- Submit -->
+                          <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Low Stock Threshold</label>
+                            <div class="flex items-center gap-1">
+                              <input
+                                type="number"
+                                [ngModel]="threshold()"
+                                (ngModelChange)="threshold.set($event !== '' && $event != null ? +$event : null)"
+                                min="0"
+                                placeholder="e.g. 10"
+                                class="w-20 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-300 placeholder-gray-300"
+                              />
+                              <span class="text-xs text-gray-400">{{ selectedUnit() }}</span>
+                            </div>
+                          </div>
+
                           <button
                             (click)="submitUpdate()"
                             [disabled]="updateLoading()"
@@ -223,14 +262,13 @@
                           </button>
                         </div>
 
-                        <!-- Operation hint -->
                         <p class="text-xs text-gray-400 mt-2">
                           @if (operation() === 'SET') {
-                            Sets stock to exactly {{ quantity() }} units
+                            Sets stock to exactly {{ quantity() }} {{ selectedUnit() }}
                           } @else if (operation() === 'INCREMENT') {
-                            Adds {{ quantity() }} units → new total: {{ product.stockQuantity + quantity() }}
+                            Adds {{ quantity() }} {{ selectedUnit() }} → new total: {{ product.stockQuantity + quantity() }} {{ selectedUnit() }}
                           } @else {
-                            Removes {{ quantity() }} units → new total: {{ product.stockQuantity - quantity() }}
+                            Removes {{ quantity() }} {{ selectedUnit() }} → new total: {{ product.stockQuantity - quantity() }} {{ selectedUnit() }}
                           }
                         </p>
 
@@ -248,7 +286,7 @@
 
               @empty {
                 <tr>
-                  <td colspan="5" class="px-5 py-12 text-center text-gray-400 text-sm">
+                  <td colspan="7" class="px-5 py-12 text-center text-gray-400 text-sm">
                     No products found.
                   </td>
                 </tr>

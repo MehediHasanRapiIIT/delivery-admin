@@ -1,14 +1,9 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
-import { ProductService } from '../../core/services/product.service';
 import { StockService } from '../../core/services/stock.service';
-import { ProductResponse, StockResponse, StockUpdateRequest } from '../../core/models/api.models';
+import { InventorySummary, StockResponse, StockUpdateRequest } from '../../core/models/api.models';
 import { parseApiError } from '../../core/utils/api-error.util';
-
-interface ProductWithStock extends ProductResponse {
-  stockDetail?: StockResponse;
-}
 
 @Component({
   selector: 'app-inventory',
@@ -17,10 +12,10 @@ interface ProductWithStock extends ProductResponse {
   templateUrl: './inventory.component.html',
 })
 export class InventoryComponent implements OnInit {
-  private productService = inject(ProductService);
   private stockService = inject(StockService);
 
-  products = signal<ProductWithStock[]>([]);
+  products = signal<StockResponse[]>([]);
+  summary = signal<InventorySummary | null>(null);
   isLoading = signal(true);
   errorMessage = signal('');
   searchQuery = signal('');
@@ -29,32 +24,33 @@ export class InventoryComponent implements OnInit {
   activeProductId = signal<number | null>(null);
   operation = signal<'SET' | 'INCREMENT' | 'DECREMENT'>('SET');
   quantity = signal<number>(0);
+  selectedUnit = signal<string>('units');
+  threshold = signal<number | null>(null);
   updateLoading = signal(false);
   updateError = signal('');
   updateSuccess = signal(false);
 
+  readonly unitOptions = ['units', 'kg', 'g', 'litre', 'ml', 'packets', 'pieces', 'boxes', 'bottles', 'bags'];
+
   filtered = computed(() => {
     const q = this.searchQuery().toLowerCase();
     if (!q) return this.products();
-    return this.products().filter((p) => p.name.toLowerCase().includes(q));
+    return this.products().filter(
+      (p) =>
+        p.productName.toLowerCase().includes(q) ||
+        (p.sku ?? '').toLowerCase().includes(q)
+    );
   });
 
-  // Summary counts
-  criticalLow = computed(() =>
-    this.products().filter((p) => p.stockStatus === 'LOW_STOCK').length
-  );
-  outOfStock = computed(() =>
-    this.products().filter((p) => p.stockStatus === 'OUT_OF_STOCK').length
-  );
-
   ngOnInit(): void {
-    this.loadProducts();
+    this.loadData();
   }
 
-  private loadProducts(): void {
+  private loadData(): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
-    this.productService.getProducts().subscribe({
+
+    this.stockService.getAllStock().subscribe({
       next: (data) => {
         this.products.set(data);
         this.isLoading.set(false);
@@ -64,12 +60,19 @@ export class InventoryComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
+
+    this.stockService.getSummary().subscribe({
+      next: (s) => this.summary.set(s),
+      error: () => {}, // non-critical
+    });
   }
 
-  openUpdatePanel(product: ProductWithStock): void {
-    this.activeProductId.set(product.id);
+  openUpdatePanel(product: StockResponse): void {
+    this.activeProductId.set(product.productId);
     this.operation.set('SET');
     this.quantity.set(product.stockQuantity);
+    this.selectedUnit.set(product.unit || 'units');
+    this.threshold.set(product.lowStockThreshold ?? null);
     this.updateError.set('');
     this.updateSuccess.set(false);
   }
@@ -87,6 +90,8 @@ export class InventoryComponent implements OnInit {
     const request: StockUpdateRequest = {
       operation: this.operation(),
       quantity: this.quantity(),
+      unit: this.selectedUnit(),
+      lowStockThreshold: this.threshold() ?? undefined,
     };
 
     this.updateLoading.set(true);
@@ -97,11 +102,13 @@ export class InventoryComponent implements OnInit {
       next: (updated) => {
         this.products.update((list) =>
           list.map((p) =>
-            p.id === id
+            p.productId === id
               ? { ...p, stockQuantity: updated.stockQuantity, stockStatus: updated.stockStatus }
               : p
           )
         );
+        // Refresh summary
+        this.stockService.getSummary().subscribe({ next: (s) => this.summary.set(s), error: () => {} });
         this.updateLoading.set(false);
         this.updateSuccess.set(true);
         setTimeout(() => this.closeUpdatePanel(), 1200);
@@ -114,7 +121,7 @@ export class InventoryComponent implements OnInit {
   }
 
   activeProduct = computed(() =>
-    this.products().find((p) => p.id === this.activeProductId()) ?? null
+    this.products().find((p) => p.productId === this.activeProductId()) ?? null
   );
 
   stockBadgeClass(status: string): string {
@@ -133,5 +140,11 @@ export class InventoryComponent implements OnInit {
     if (status === 'IN_STOCK') return 'text-gray-800';
     if (status === 'LOW_STOCK') return 'text-orange-500 font-bold';
     return 'text-red-500 font-bold';
+  }
+
+  projectedQty(product: StockResponse): number {
+    if (this.operation() === 'SET') return this.quantity();
+    if (this.operation() === 'INCREMENT') return product.stockQuantity + this.quantity();
+    return product.stockQuantity - this.quantity();
   }
 }

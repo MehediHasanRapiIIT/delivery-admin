@@ -46,6 +46,27 @@ export class OrderDetailComponent implements OnInit {
     this.router.navigate(['/orders']);
   }
 
+  printInvoice(): void {
+    window.print();
+  }
+
+  scrollToStatus(): void {
+    document.getElementById('status-update-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /** Build a simple timeline from the current order status */
+  timeline(): { label: string; done: boolean; time?: string }[] {
+    const o = this.order();
+    if (!o) return [];
+    const statusOrder = ['PENDING', 'CONFIRMED', 'PREPARING', 'ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+    const currentIdx = statusOrder.indexOf(o.orderStatus.toUpperCase());
+    return statusOrder.map((s, i) => ({
+      label: s.replace(/_/g, ' '),
+      done: i <= currentIdx,
+      time: i === 0 ? this.formatDate(o.createdAt) : undefined,
+    }));
+  }
+
   onUpdateStatus(): void {
     const o = this.order();
     if (!o) return;

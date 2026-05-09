@@ -18,21 +18,25 @@ export class BannersComponent implements OnInit {
   isLoading = signal(true);
   errorMessage = signal('');
 
-  // Upload form
-  showUploadForm = signal(false);
+  // Form state — shared between create and edit
+  showForm = signal(false);
+  editingId = signal<string | null>(null); // null = create mode
   dragOver = signal(false);
   imageFile = signal<File | null>(null);
   imagePreview = signal('');
+  existingImageUrl = signal('');
   promotionTitle = signal('');
   promotionDetails = signal('');
   fromDate = signal('');
   toDate = signal('');
-  isUploading = signal(false);
-  uploadError = signal('');
+  isSaving = signal(false);
+  formError = signal('');
 
   // Delete confirm
   deleteConfirmId = signal<string | null>(null);
   isDeleting = signal(false);
+
+  get isEditMode(): boolean { return this.editingId() !== null; }
 
   ngOnInit(): void {
     this.loadBanners();
@@ -47,8 +51,25 @@ export class BannersComponent implements OnInit {
     });
   }
 
-  toggleUploadForm(): void {
-    this.showUploadForm.update((v) => !v);
+  openCreateForm(): void {
+    this.resetForm();
+    this.editingId.set(null);
+    this.showForm.set(true);
+  }
+
+  openEditForm(banner: BannerResponse): void {
+    this.resetForm();
+    this.editingId.set(banner.id);
+    this.promotionTitle.set(banner.promotionTitle ?? '');
+    this.promotionDetails.set(banner.promotionDetails ?? '');
+    this.fromDate.set(banner.fromDate ?? '');
+    this.toDate.set(banner.toDate ?? '');
+    this.existingImageUrl.set(banner.imageUrl ?? '');
+    this.showForm.set(true);
+  }
+
+  closeForm(): void {
+    this.showForm.set(false);
     this.resetForm();
   }
 
@@ -77,29 +98,39 @@ export class BannersComponent implements OnInit {
     this.imagePreview.set('');
   }
 
-  onUpload(): void {
-    const file = this.imageFile();
-    if (!file) { this.uploadError.set('Please select an image.'); return; }
+  onSave(): void {
+    const editId = this.editingId();
 
-    this.isUploading.set(true);
-    this.uploadError.set('');
+    if (!editId && !this.imageFile()) {
+      this.formError.set('Please select an image.');
+      return;
+    }
 
-    this.bannerService.uploadBanner(
-      file,
-      this.promotionTitle() || undefined,
-      this.promotionDetails() || undefined,
-      this.fromDate() || undefined,
-      this.toDate() || undefined,
-    ).subscribe({
+    this.isSaving.set(true);
+    this.formError.set('');
+
+    const title = this.promotionTitle() || undefined;
+    const details = this.promotionDetails() || undefined;
+    const from = this.fromDate() || undefined;
+    const to = this.toDate() || undefined;
+
+    const req$ = editId
+      ? this.bannerService.updateBanner(editId, this.imageFile() ?? undefined, title, details, from, to)
+      : this.bannerService.uploadBanner(this.imageFile()!, title, details, from, to);
+
+    req$.subscribe({
       next: (banner) => {
-        this.banners.update((list) => [banner, ...list]);
-        this.isUploading.set(false);
-        this.showUploadForm.set(false);
-        this.resetForm();
+        if (editId) {
+          this.banners.update((list) => list.map((b) => b.id === editId ? banner : b));
+        } else {
+          this.banners.update((list) => [banner, ...list]);
+        }
+        this.isSaving.set(false);
+        this.closeForm();
       },
       error: (err) => {
-        this.uploadError.set(parseApiError(err));
-        this.isUploading.set(false);
+        this.formError.set(parseApiError(err));
+        this.isSaving.set(false);
       },
     });
   }
@@ -126,11 +157,12 @@ export class BannersComponent implements OnInit {
   private resetForm(): void {
     this.imageFile.set(null);
     this.imagePreview.set('');
+    this.existingImageUrl.set('');
     this.promotionTitle.set('');
     this.promotionDetails.set('');
     this.fromDate.set('');
     this.toDate.set('');
-    this.uploadError.set('');
+    this.formError.set('');
   }
 
   formatDate(dateStr: string): string {

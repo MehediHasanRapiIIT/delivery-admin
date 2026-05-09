@@ -52,14 +52,25 @@ export interface ProductResponse {
 export interface StockUpdateRequest {
   operation: 'SET' | 'INCREMENT' | 'DECREMENT';
   quantity: number;
+  unit?: string;
+  lowStockThreshold?: number;
 }
 
 export interface StockResponse {
   productId: number;
   productName: string;
+  sku: string | null;
+  imageUrl: string | null;
+  unit: string;
   stockQuantity: number;
   stockStatus: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
   lowStockThreshold: number | null;
+}
+
+export interface InventorySummary {
+  criticalLow: number;
+  outOfStock: number;
+  reorderPending: number;
 }
 
 // --- Categories ---
@@ -119,6 +130,21 @@ export interface OrderResponse {
   latitude: number;
   longitude: number;
   orderItems: OrderItem[];
+  customerName: string | null;
+  customerPhone: string | null;
+  riderName: string | null;
+  riderPhone: string | null;
+  riderImageUrl: string | null;
+  riderVehicleType: string | null;
+  riderPlateNumber: string | null;
+  riderRating: number | null;
+}
+
+export interface OrderSummary {
+  total: number;
+  pending: number;
+  outForDelivery: number;
+  completed: number;
 }
 
 // --- Reviews ---

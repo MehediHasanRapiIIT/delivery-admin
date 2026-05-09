@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { OrderResponse } from '../models/api.models';
+import { OrderResponse, OrderSummary } from '../models/api.models';
 
 export type OrderStatus =
   | 'PENDING'
@@ -17,7 +17,10 @@ export class OrderService {
   private http = inject(HttpClient);
   private baseUrl = environment.apiBaseUrl;
 
-  // Admin endpoints
+  getSummary(): Observable<OrderSummary> {
+    return this.http.get<OrderSummary>(`${this.baseUrl}/admin/orders/summary`);
+  }
+
   getAllOrders(): Observable<OrderResponse[]> {
     return this.http.get<OrderResponse[]>(`${this.baseUrl}/admin/orders`);
   }
@@ -30,7 +33,10 @@ export class OrderService {
     return this.http.patch<OrderResponse>(`${this.baseUrl}/admin/orders/${orderId}/status`, { status });
   }
 
-  // Consumer endpoints (for detail view — still needs userId)
+  getOrdersByUser(userId: string): Observable<OrderResponse[]> {
+    return this.http.get<OrderResponse[]>(`${this.baseUrl}/app/consumer/${userId}/orders`);
+  }
+
   getOrderDetails(userId: string, orderId: string): Observable<OrderResponse> {
     return this.http.get<OrderResponse>(`${this.baseUrl}/app/consumer/${userId}/orders/${orderId}`);
   }

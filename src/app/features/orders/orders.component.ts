@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../shared/sidebar/sidebar.component';
 import { OrderService, OrderStatus } from '../../core/services/order.service';
-import { OrderResponse } from '../../core/models/api.models';
+import { OrderResponse, OrderSummary } from '../../core/models/api.models';
 import { parseApiError } from '../../core/utils/api-error.util';
 
 const ALL_STATUSES: OrderStatus[] = [
@@ -24,6 +24,7 @@ export class OrdersComponent implements OnInit {
   activeStatus = signal<OrderStatus | 'ALL'>('ALL');
 
   orders = signal<OrderResponse[]>([]);
+  summary = signal<OrderSummary | null>(null);
   isLoading = signal(true);
   errorMessage = signal('');
   searchQuery = signal('');
@@ -38,7 +39,9 @@ export class OrdersComponent implements OnInit {
       (o) =>
         o.id.toLowerCase().includes(q) ||
         o.deliveryAddress.toLowerCase().includes(q) ||
-        o.paymentMethod.toLowerCase().includes(q)
+        o.paymentMethod.toLowerCase().includes(q) ||
+        (o.customerName ?? '').toLowerCase().includes(q) ||
+        (o.customerPhone ?? '').toLowerCase().includes(q)
     );
   });
 
@@ -60,6 +63,10 @@ export class OrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadOrders();
+    this.orderService.getSummary().subscribe({
+      next: (s) => this.summary.set(s),
+      error: () => {},
+    });
   }
 
   loadOrders(): void {

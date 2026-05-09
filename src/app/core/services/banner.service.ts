@@ -29,6 +29,23 @@ export class BannerService {
     return this.http.post<BannerResponse>(`${this.baseUrl}/api/banners`, formData);
   }
 
+  updateBanner(
+    id: string,
+    image?: File,
+    promotionTitle?: string,
+    promotionDetails?: string,
+    fromDate?: string,
+    toDate?: string
+  ): Observable<BannerResponse> {
+    const formData = new FormData();
+    if (image) formData.append('image', image);
+    if (promotionTitle !== undefined) formData.append('promotionTitle', promotionTitle);
+    if (promotionDetails !== undefined) formData.append('promotionDetails', promotionDetails);
+    if (fromDate) formData.append('fromDate', fromDate);
+    if (toDate) formData.append('toDate', toDate);
+    return this.http.put<BannerResponse>(`${this.baseUrl}/api/banners/${id}`, formData);
+  }
+
   deleteBanner(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/api/banners/${id}`);
   }
