@@ -36,6 +36,9 @@ export interface ProductRequest {
 export interface ProductResponse {
   id: number;
   categoryId: number;
+  categoryName: string | null;
+  sku: string | null;
+  unit: string | null;
   name: string;
   description: string;
   price: number;

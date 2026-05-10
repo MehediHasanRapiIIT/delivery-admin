@@ -63,21 +63,49 @@
 
         <!-- Summary cards -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <p class="text-xs text-gray-400">Total Amount</p>
-            <p class="text-xl font-extrabold text-gray-900 mt-1">৳ {{ formatAmount(grandTotal()) }}</p>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Total Amount</p>
+              <p class="text-lg font-extrabold text-gray-900 mt-0.5">৳ {{ formatAmount(grandTotal()) }}</p>
+            </div>
           </div>
-          <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <p class="text-xs text-gray-400">Payment Method</p>
-            <p class="text-xl font-extrabold text-gray-900 mt-1">{{ order()!.paymentMethod }}</p>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Payment Method</p>
+              <p class="text-lg font-extrabold text-gray-900 mt-0.5">{{ order()!.paymentMethod }}</p>
+            </div>
           </div>
-          <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <p class="text-xs text-gray-400">Delivery Charge</p>
-            <p class="text-xl font-extrabold text-gray-900 mt-1">৳ {{ formatAmount(order()!.deliveryCharge) }}</p>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Delivery Charge</p>
+              <p class="text-lg font-extrabold text-gray-900 mt-0.5">৳ {{ formatAmount(order()!.deliveryCharge) }}</p>
+            </div>
           </div>
-          <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <p class="text-xs text-gray-400">Items</p>
-            <p class="text-xl font-extrabold text-gray-900 mt-1">{{ order()!.orderItems.length }}</p>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Items</p>
+              <p class="text-lg font-extrabold text-gray-900 mt-0.5">{{ order()!.orderItems.length }}</p>
+            </div>
           </div>
         </div>
 

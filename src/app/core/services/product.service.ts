@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ProductRequest, ProductResponse } from '../models/api.models';
+import { PageResponse, ProductRequest, ProductResponse } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -11,6 +11,12 @@ export class ProductService {
 
   getProducts(): Observable<ProductResponse[]> {
     return this.http.get<ProductResponse[]>(`${this.baseUrl}/api/products`);
+  }
+
+  getProductsPaged(page: number, size: number): Observable<PageResponse<ProductResponse>> {
+    return this.http.get<PageResponse<ProductResponse>>(`${this.baseUrl}/api/products/paged`, {
+      params: { page: String(page), size: String(size) },
+    });
   }
 
   searchProducts(name: string): Observable<ProductResponse[]> {

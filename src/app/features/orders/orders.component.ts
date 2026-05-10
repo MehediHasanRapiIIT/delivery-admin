@@ -21,102 +21,159 @@ export class OrdersComponent implements OnInit {
   private router = inject(Router);
 
   readonly statuses = ALL_STATUSES;
-  activeStatus = signal<OrderStatus | 'ALL'>('ALL');
+  readonly pageSize = 10;
+
+  // Filter state
+  filterStatus = signal<string>('ALL');
+  filterPayment = signal<string>('ALL');
+  filterDate = signal<string>('ALL');
+  searchQuery = signal('');
+
+  // Pagination
+  currentPage = signal(0);
+  totalElements = signal(0);
+  totalPages = signal(0);
 
   orders = signal<OrderResponse[]>([]);
   summary = signal<OrderSummary | null>(null);
   isLoading = signal(true);
   errorMessage = signal('');
-  searchQuery = signal('');
 
-  currentPage = signal(1);
-  readonly pageSize = 10;
-
+  // Client-side search filter on current page
   filtered = computed(() => {
     const q = this.searchQuery().toLowerCase();
-    if (!q) return this.orders();
-    return this.orders().filter(
-      (o) =>
-        o.id.toLowerCase().includes(q) ||
-        o.deliveryAddress.toLowerCase().includes(q) ||
-        o.paymentMethod.toLowerCase().includes(q) ||
-        (o.customerName ?? '').toLowerCase().includes(q) ||
-        (o.customerPhone ?? '').toLowerCase().includes(q)
+    const pay = this.filterPayment();
+    let list = this.orders();
+
+    if (q) list = list.filter(o =>
+      o.id.toLowerCase().includes(q) ||
+      (o.customerName ?? '').toLowerCase().includes(q) ||
+      (o.customerPhone ?? '').toLowerCase().includes(q) ||
+      o.deliveryAddress.toLowerCase().includes(q)
     );
+
+    if (pay !== 'ALL') list = list.filter(o => o.paymentMethod === pay);
+
+    return list;
   });
 
-  paginated = computed(() => {
-    const start = (this.currentPage() - 1) * this.pageSize;
-    return this.filtered().slice(start, start + this.pageSize);
-  });
+  showingFrom = computed(() => this.currentPage() * this.pageSize + 1);
+  showingTo = computed(() => Math.min((this.currentPage() + 1) * this.pageSize, this.totalElements()));
 
-  totalPages = computed(() => Math.ceil(this.filtered().length / this.pageSize));
-
-  // Status counts from the full loaded list
-  countByStatus = computed(() => {
-    const counts: Record<string, number> = { ALL: this.orders().length };
-    for (const s of ALL_STATUSES) {
-      counts[s] = this.orders().filter((o) => o.orderStatus === s).length;
-    }
-    return counts;
+  pageNumbers = computed(() => {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    if (total <= 5) return Array.from({ length: total }, (_, i) => i);
+    const pages: number[] = [];
+    if (current > 1) pages.push(0);
+    if (current > 2) pages.push(-1);
+    for (let i = Math.max(0, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    if (current < total - 3) pages.push(-1);
+    if (current < total - 2) pages.push(total - 1);
+    return [...new Set(pages)];
   });
 
   ngOnInit(): void {
-    this.loadOrders();
+    this.loadPage(0);
     this.orderService.getSummary().subscribe({
       next: (s) => this.summary.set(s),
       error: () => {},
     });
   }
 
-  loadOrders(): void {
+  loadPage(page: number): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
-    this.currentPage.set(1);
-
-    const status = this.activeStatus();
-    const req$ = status === 'ALL'
-      ? this.orderService.getAllOrders()
-      : this.orderService.getOrdersByStatus(status);
-
-    req$.subscribe({
-      next: (data) => { this.orders.set(data); this.isLoading.set(false); },
-      error: (err) => { this.errorMessage.set(parseApiError(err)); this.isLoading.set(false); },
+    const status = this.filterStatus() !== 'ALL' ? this.filterStatus() : undefined;
+    const { fromDate, toDate } = this.getDateRange(this.filterDate());
+    this.orderService.getOrdersPaged(page, this.pageSize, status, fromDate, toDate).subscribe({
+      next: (data) => {
+        this.orders.set(data.content);
+        this.currentPage.set(data.number);
+        this.totalElements.set(data.totalElements);
+        this.totalPages.set(data.totalPages);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.errorMessage.set(parseApiError(err));
+        this.isLoading.set(false);
+      },
     });
   }
 
-  setStatus(status: OrderStatus | 'ALL'): void {
-    this.activeStatus.set(status);
-    this.searchQuery.set('');
-    this.loadOrders();
+  private getDateRange(filter: string): { fromDate?: string; toDate?: string } {
+    const today = new Date();
+    const fmt = (d: Date) => d.toISOString().split('T')[0]; // yyyy-MM-dd
+
+    if (filter === 'TODAY') {
+      return { fromDate: fmt(today), toDate: fmt(today) };
+    }
+    if (filter === 'YESTERDAY') {
+      const y = new Date(today); y.setDate(today.getDate() - 1);
+      return { fromDate: fmt(y), toDate: fmt(y) };
+    }
+    if (filter === 'LAST_7') {
+      const d = new Date(today); d.setDate(today.getDate() - 7);
+      return { fromDate: fmt(d), toDate: fmt(today) };
+    }
+    if (filter === 'LAST_30') {
+      const d = new Date(today); d.setDate(today.getDate() - 30);
+      return { fromDate: fmt(d), toDate: fmt(today) };
+    }
+    return {};
+  }
+
+  onStatusFilterChange(status: string): void {
+    this.filterStatus.set(status);
+    this.loadPage(0);
+  }
+
+  onDateFilterChange(date: string): void {
+    this.filterDate.set(date);
+    this.loadPage(0);
+  }
+
+  setPage(page: number): void {
+    if (page >= 0 && page < this.totalPages()) this.loadPage(page);
   }
 
   viewOrder(order: OrderResponse): void {
     this.router.navigate(['/orders', order.id], { state: { order } });
   }
 
-  setPage(p: number): void {
-    if (p >= 1 && p <= this.totalPages()) this.currentPage.set(p);
-  }
-
   statusBadgeClass(status: string): string {
     switch (status?.toUpperCase()) {
-      case 'PENDING':           return 'bg-yellow-100 text-yellow-700';
-      case 'CONFIRMED':         return 'bg-blue-100 text-blue-700';
-      case 'PREPARING':         return 'bg-orange-100 text-orange-700';
-      case 'OUT_FOR_DELIVERY':  return 'bg-indigo-100 text-indigo-700';
-      case 'DELIVERED':         return 'bg-emerald-100 text-emerald-700';
-      case 'CANCELLED':         return 'bg-red-100 text-red-600';
-      default:                  return 'bg-gray-100 text-gray-600';
+      case 'PENDING':           return 'bg-yellow-50 text-yellow-600 border border-yellow-200';
+      case 'CONFIRMED':         return 'bg-blue-50 text-blue-600 border border-blue-200';
+      case 'PREPARING':         return 'bg-orange-50 text-orange-600 border border-orange-200';
+      case 'OUT_FOR_DELIVERY':  return 'bg-purple-50 text-purple-600 border border-purple-200';
+      case 'DELIVERED':         return 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+      case 'CANCELLED':         return 'bg-red-50 text-red-600 border border-red-200';
+      default:                  return 'bg-gray-50 text-gray-600 border border-gray-200';
     }
+  }
+
+  statusDotClass(status: string): string {
+    switch (status?.toUpperCase()) {
+      case 'PENDING':           return 'bg-yellow-500';
+      case 'CONFIRMED':         return 'bg-blue-500';
+      case 'PREPARING':         return 'bg-orange-500';
+      case 'OUT_FOR_DELIVERY':  return 'bg-purple-500';
+      case 'DELIVERED':         return 'bg-emerald-500';
+      case 'CANCELLED':         return 'bg-red-500';
+      default:                  return 'bg-gray-400';
+    }
+  }
+
+  statusLabel(status: string): string {
+    return status?.replace(/_/g, ' ') ?? '—';
   }
 
   formatDate(dateStr: string): string {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleString('en-GB', {
-      day: 'numeric', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      + '\n' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   }
 
   formatAmount(amount: number | string): string {

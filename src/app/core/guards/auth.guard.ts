@@ -5,8 +5,9 @@ import { AuthService } from '../services/auth.service';
 /** Protects routes that require authentication. */
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
-  const router = inject(Router);
-  return auth.isAuthenticated() ? true : router.createUrlTree(['/login']);
+  if (auth.isAuthenticated()) return true;
+  auth.login(); // triggers Keycloak redirect — no return value needed
+  return false;
 };
 
 /** Redirects already-authenticated users away from the login page. */
