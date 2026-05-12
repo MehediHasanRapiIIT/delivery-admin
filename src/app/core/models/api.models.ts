@@ -59,6 +59,17 @@ export interface StockUpdateRequest {
   lowStockThreshold?: number;
 }
 
+export interface BulkStockItem {
+  productId: number;
+  quantity: number;
+  unit?: string;
+  lowStockThreshold?: number;
+}
+
+export interface BulkStockUpdateRequest {
+  updates: BulkStockItem[];
+}
+
 export interface StockResponse {
   productId: number;
   productName: string;
@@ -86,6 +97,7 @@ export interface CategoryResponse {
   id: number;
   name: string;
   isActive: boolean;
+  productCount: number;
 }
 
 // --- Banners ---

@@ -17,7 +17,9 @@ export class SidebarComponent {
     { label: 'Products',   icon: 'products',   route: '/products' },
     { label: 'Categories', icon: 'categories', route: '/categories' },
     { label: 'Inventory',  icon: 'inventory',  route: '/inventory' },
+    { label: 'Analytics',  icon: 'analytics',  route: '/analytics' },
     { label: 'Banners',    icon: 'banners',    route: '/banners' },
+    { label: 'Reviews',    icon: 'reviews',    route: '/reviews' },
     { label: 'Customers',  icon: 'customers',  route: '/customers' },
     { label: 'Delivery',   icon: 'delivery',   route: '/delivery' },
   ];

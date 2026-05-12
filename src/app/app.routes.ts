@@ -58,6 +58,12 @@ export const routes: Routes = [
       import('./features/inventory/inventory.component').then((m) => m.InventoryComponent),
   },
   {
+    path: 'analytics',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/analytics/analytics.component').then((m) => m.AnalyticsComponent),
+  },
+  {
     path: 'banners',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -74,6 +80,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/orders/order-detail/order-detail.component').then((m) => m.OrderDetailComponent),
+  },
+  {
+    path: 'reviews',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/reviews/reviews.component').then((m) => m.ReviewsComponent),
   },
   { path: '**', redirectTo: 'login' },
 ];

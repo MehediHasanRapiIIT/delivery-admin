@@ -9,6 +9,18 @@
         <h1 class="text-xl font-bold text-gray-900">Inventory</h1>
         <p class="text-xs text-gray-400">Manage stock levels across all products</p>
       </div>
+      <button (click)="toggleBulkMode()"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-indigo-600]="bulkMode()"
+        [class.text-white]="bulkMode()"
+        [class.hover:bg-indigo-700]="bulkMode()"
+        [class.border]="!bulkMode()"
+        [class.border-gray-200]="!bulkMode()"
+        [class.text-gray-600]="!bulkMode()"
+        [class.hover:bg-gray-50]="!bulkMode()">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        {{ bulkMode() ? 'Exit Bulk Mode' : 'Bulk Update' }}
+      </button>
     </header>
 
     <main class="flex-1 overflow-y-auto p-6">
@@ -62,7 +74,105 @@
         </div>
       }
 
-      <!-- Error -->
+      <!-- Bulk update panel -->
+      @if (bulkMode()) {
+        <div class="mb-5 bg-indigo-50 border border-indigo-200 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+              </div>
+              <p class="text-sm font-bold text-indigo-900">Bulk Stock Update</p>
+              <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{{ bulkSelections().length }} selected</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button (click)="selectAllForBulk()"
+                class="text-xs text-indigo-600 hover:underline font-medium">
+                {{ bulkSelections().length === products().length ? 'Deselect All' : 'Select All' }}
+              </button>
+              <button (click)="submitBulkUpdate()" [disabled]="bulkSelections().length === 0 || bulkLoading()"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                @if (bulkLoading()) {
+                  <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                  Updating...
+                } @else {
+                  Apply Bulk Update
+                }
+              </button>
+            </div>
+          </div>
+          @if (bulkError()) {
+            <p class="mb-3 text-xs text-red-600 font-medium bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ bulkError() }}</p>
+          }
+          @if (bulkSuccess()) {
+            <p class="mb-3 text-xs text-emerald-600 font-medium bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">Bulk update applied successfully!</p>
+          }
+          <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+            @for (product of products(); track product.productId) {
+              <div class="bg-white rounded-lg border px-4 py-3 flex items-center gap-4"
+                [class.border-indigo-300]="isBulkSelected(product.productId)"
+                [class.border-gray-200]="!isBulkSelected(product.productId)">
+                <!-- Checkbox -->
+                <input type="checkbox" [checked]="isBulkSelected(product.productId)"
+                  (change)="toggleBulkSelection(product.productId)"
+                  class="w-4 h-4 rounded border-gray-300 text-indigo-600 cursor-pointer flex-shrink-0"/>
+                <!-- Product info -->
+                <div class="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                  @if (product.imageUrl) {
+                    <img [src]="product.imageUrl" [alt]="product.productName" class="w-full h-full object-cover"/>
+                  }
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-800 truncate">{{ product.productName }}</p>
+                  <p class="text-xs text-gray-400">Current: {{ product.stockQuantity }} {{ product.unit }}</p>
+                </div>
+                <!-- Inline qty input (only when selected) -->
+                @if (isBulkSelected(product.productId)) {
+                  <div class="flex items-center gap-2 flex-shrink-0">
+                    <input type="number" min="0"
+                      [ngModel]="getBulkQty(product.productId)"
+                      (ngModelChange)="setBulkQty(product.productId, +$event)"
+                      class="w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"/>
+                    <select [ngModel]="getBulkUnit(product.productId)"
+                      (ngModelChange)="setBulkUnit(product.productId, $event)"
+                      class="px-2 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+                      @for (u of unitOptions; track u) {
+                        <option [value]="u">{{ u }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Low stock alert banner -->
+      @if (!isLoading() && lowStockAlerts().length > 0) {
+        <div class="mb-5 bg-orange-50 border border-orange-200 rounded-xl p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <svg class="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-orange-800">{{ lowStockAlerts().length }} product{{ lowStockAlerts().length > 1 ? 's' : '' }} need restocking</p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                @for (p of lowStockAlerts(); track p.productId) {
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-xs font-medium text-orange-700">
+                    <span class="w-1.5 h-1.5 rounded-full" [class]="p.stockStatus === 'OUT_OF_STOCK' ? 'bg-red-500' : 'bg-orange-500'"></span>
+                    {{ p.productName }}
+                    <span class="text-orange-400">({{ p.stockQuantity }} {{ p.unit }})</span>
+                  </span>
+                }
+              </div>
+            </div>
+            <button (click)="dismissAlerts()" class="text-orange-400 hover:text-orange-600 transition-colors flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      }
       @if (errorMessage()) {
         <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           {{ errorMessage() }}
