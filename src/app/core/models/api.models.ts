@@ -188,6 +188,51 @@ export interface PageResponse<T> {
   number: number;
 }
 
+// --- Global Search ---
+export type SearchItemType =
+  | 'PRODUCT'
+  | 'CATEGORY'
+  | 'ORDER'
+  | 'CUSTOMER'
+  | 'RIDER'
+  | 'REVIEW'
+  | 'SHOP'
+  | 'BANNER';
+
+export interface SearchItem {
+  id: string;
+  type: SearchItemType;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  extra?: Record<string, unknown>;
+}
+
+export interface SearchGroup {
+  items: SearchItem[];
+  total: number;
+}
+
+export interface AdminSearchResponse {
+  query: string;
+  products: SearchGroup;
+  categories: SearchGroup;
+  orders: SearchGroup;
+  customers: SearchGroup;
+  riders: SearchGroup;
+  reviews: SearchGroup;
+  totalCount: number;
+}
+
+export interface CustomerSearchResponse {
+  query: string;
+  products: SearchGroup;
+  categories: SearchGroup;
+  shops: SearchGroup;
+  banners: SearchGroup;
+  totalCount: number;
+}
+
 // --- Error shapes ---
 export interface ApiValidationError {
   errors: Record<string, string>;
